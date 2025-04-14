@@ -1,30 +1,278 @@
 <!DOCTYPE html>
-<html lang="PT-BR">
-<html>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA Compatible" content="IE=Edge">
-    <meta name="viewport" content="width=device width, initial-scale=1.0">    
-    
-    <title> FillMyFridge </title>
-    <link rel="stylesheet" type="text/css" href="fillMyFridge.css">
-    <body>
-        <div id="cabecalho" class="cabecalho"> 
-            <h1> Fill my Fridge </h1>
-         </div>
-         
-         <div id="menu" class="menu">
-             <button id = "btn_home" class="aba"> Home </button>
-             <button id = "btn_novo" class="aba"> Cadastro de item </button>
-             <button id = "btn_pesquisar" class="aba"> Pesquisar </button>
-             <button id = "btn_gestao" class="aba"> Gestão de Estoque </button>
-             <button id = "btn_usuario" class="aba"> Usuário </button>
-         </div>
- 
-         <div id="principal" class="principal">
-             Este é o corpo da aplicação!
-             <iframe></iframe>
-         </div>
- 
-         <script src="" type="module"> </script>
-    </body>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controle de Estoque</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #e3eaf2;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+      color: #2b2b2b;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #333;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    #itemList {
+      margin-top: 20px;
+      background: #f4f6f8;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 5px;
+    }
+
+    .remove-btn, .decrease-btn, .increase-btn {
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .remove-btn {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .decrease-btn {
+      background: #f59e0b;
+      color: #fff;
+    }
+
+    .increase-btn {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .entry {
+      background: #f0f4f8;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .entry strong {
+      color: #333;
+    }
+
+    #sendEmail {
+      background: #6b7280;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .item-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .buttons {
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cadastro de Cliente e Itens</h1>
+
+    <form id="clientForm">
+      <div class="form-group">
+        <label for="name">Nome do Cliente:</label>
+        <input type="text" id="name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">E-mail:</label>
+        <input type="email" id="email" required />
+      </div>
+    </form>
+
+    <form id="itemForm">
+      <div class="form-group">
+        <label for="item">Item:</label>
+        <input type="text" id="item" required />
+      </div>
+
+      <div class="form-group">
+        <label for="quantity">Quantidade:</label>
+        <input type="number" id="quantity" min="1" required />
+      </div>
+
+      <button type="button" id="addItem">Adicionar Item</button>
+    </form>
+
+    <div id="itemList"></div>
+
+    <button id="finalize">Finalizar Cadastro</button>
+
+    <h2>Entradas Cadastradas</h2>
+    <div id="entries"></div>
+  </div>
+
+  <script>
+    let currentItems = [];
+
+    document.getElementById('addItem').addEventListener('click', function () {
+      const item = document.getElementById('item').value.trim();
+      const quantity = parseInt(document.getElementById('quantity').value);
+
+      if (!item || !quantity || quantity <= 0) {
+        alert('Por favor, insira um item válido com quantidade maior que zero.');
+        return;
+      }
+
+      const existingItem = currentItems.find(entry => entry.item.toLowerCase() === item.toLowerCase());
+
+      if (existingItem) {
+        existingItem.quantity += quantity;
+      } else {
+        currentItems.push({ item, quantity });
+      }
+
+      updateItemList();
+      document.getElementById('itemForm').reset();
+    });
+
+    function removeItem(index) {
+      currentItems.splice(index, 1);
+      updateItemList();
+    }
+
+    function decreaseQuantity(index) {
+      currentItems[index].quantity -= 1;
+      if (currentItems[index].quantity <= 0) {
+        removeItem(index);
+      } else {
+        updateItemList();
+      }
+    }
+
+    function increaseQuantity(index) {
+      currentItems[index].quantity += 1;
+      updateItemList();
+    }
+
+    function updateItemList() {
+      const itemList = document.getElementById('itemList');
+      itemList.innerHTML = '';
+
+      if (currentItems.length > 0) {
+        itemList.innerHTML = '<h3>Itens Adicionados:</h3>';
+        currentItems.forEach((entry, index) => {
+          const itemRow = document.createElement('div');
+          itemRow.classList.add('item-row');
+          itemRow.innerHTML = `
+            <span>${index + 1}. ${entry.item} - Quantidade: ${entry.quantity}</span>
+            <div class="buttons">
+              <button class="decrease-btn" onclick="decreaseQuantity(${index})">➖</button>
+              <button class="increase-btn" onclick="increaseQuantity(${index})">➕</button>
+              <button class="remove-btn" onclick="removeItem(${index})">❌</button>
+            </div>
+          `;
+          itemList.appendChild(itemRow);
+        });
+      }
+    }
+
+    document.getElementById('finalize').addEventListener('click', function () {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      if (!name || !email || currentItems.length === 0) {
+        alert('Preencha os dados do cliente e adicione ao menos um item.');
+        return;
+      }
+
+      const entryDiv = document.createElement('div');
+      entryDiv.classList.add('entry');
+
+      let itemsHTML = '';
+      currentItems.forEach(({ item, quantity }) => {
+        itemsHTML += `• ${item} (Quantidade: ${quantity})<br>`;
+      });
+
+      entryDiv.innerHTML = `
+        <strong>Cliente:</strong> ${name}<br>
+        <strong>E-mail:</strong> ${email}<br>
+        <strong>Itens:</strong><br>${itemsHTML}
+      `;
+
+      document.getElementById('entries').appendChild(entryDiv);
+
+      // Limpar
+      currentItems = [];
+      document.getElementById('clientForm').reset();
+      updateItemList();
+    });
+  </script>
+</body>
 </html>
